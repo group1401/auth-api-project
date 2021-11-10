@@ -2,7 +2,7 @@
   "development": {
     "username": "nashat",
     "password": "root",
-    "database": "projectdb",
+    "database": "project22db",
     "host": "127.0.0.1",
     "dialect": "postgres"
   },
