@@ -1,45 +1,56 @@
 "use strict";
 
 const express = require("express");
+
+const dataModules = require('../models');
+
 const jobsRouter = express.Router();
-const { clothescollection } = require("../models/index");
 
-jobsRouter.get("/clothes", getclothes);
-jobsRouter.get("/clothes/:id", getoneclothes);
-jobsRouter.post("/clothes", createclothes);
-jobsRouter.put("/clothes/:id", updateclothes);
-jobsRouter.delete("/clothes/:id", deleteclothes);
+jobsRouter.param('model', (req, res, next) => {
+  const modelName = req.params.model;
+  if (dataModules[modelName]) {
+    req.model = dataModules[modelName];
+    next();
+  } else {
+    next('Invalid Model');
+  }
+});
+jobsRouter.get("/:jobs", getJobs);
+jobsRouter.get("/:jobs/:id", getOneJobs);
+jobsRouter.post("/:jobs", createJob);
+jobsRouter.put("/:jobs/:id", updateJob);
+jobsRouter.delete("/:jobs/:id", deleteJob);
 
-async function getclothes(req, res) {
-  let allclothes = await clothescollection.read();
+async function getJobs(req, res) {
+  let allJobs = await req.model.get();
 
-  res.status(200).json(allclothes);
+  res.status(200).json(allJobs);
 }
 
-async function getoneclothes(req, res) {
+async function getOneJobs(req, res) {
   const id = parseInt(req.params.id);
-  let oneclothes = await clothescollection.read(id);
+  let oneJob = await req.model.get(id);
 
-  res.status(200).json(oneclothes);
+  res.status(200).json(oneJob);
 }
 
-async function createclothes(req, res) {
+async function createJob(req, res) {
   let obj = req.body;
-  let createdclothes = await clothescollection.create(obj);
-  res.status(201).json(createdclothes);
+  let createdOne = await req.model.update(obj);
+  res.status(201).json(createdOne);
 }
-async function updateclothes(req, res) {
+async function updateJob(req, res) {
   const id = parseInt(req.params.id);
   let newobj = req.body;
-  let updatedclothes = await clothescollection.update(id, newobj);
+  let updatedJob = await req.model.put(id,newobj);
 
-  res.status(201).json(updatedclothes);
+  res.status(201).json(updatedJob);
 }
 
-async function deleteclothes(req, res) {
+async function deleteJob(req, res) {
   const id = parseInt(req.params.id);
-  let deletedclothes = await clothescollection.delete(id);
-  res.status(204).json(deletedclothes);
+  let deleteJob = await req.model.delete(id);
+  res.status(204).json(deleteJob);
 }
 
-module.exports = { jobsRouter };
+module.exports = jobsRouter 

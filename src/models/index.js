@@ -1,15 +1,17 @@
 "use strict";
 require("dotenv").config();
 
-const users = require("./users");
-const jobs = require("./jobs/model");
-const profile = require("./profile/model");
-const dataCollection = require("./data-collection");
 
-const { Sequelize, DataTypes } = require("sequelize");
-const DATABASE_URL =
-  process.env.NODE_ENV === "test" ? "sqlite:memory:" : process.env.DATABASE_URL;
-console.log(DATABASE_URL);
+const {Sequelize,DataTypes}=require('sequelize')
+const userModel = require('./users.js');
+const jobsModel = require('./jobModel');
+const profileModel = require('./profileModel')
+const Data = require("./data-collection");
+
+const DATABASE_URL = "postgres://localhost:5432/hanin";
+// const DATABASE_URL = process.env.DATABASE_URL || 'sqlite:memory;';
+
+
 let sequelizeOptions =
   process.env.NODE_ENV === "production"
     ? {
@@ -24,18 +26,26 @@ let sequelizeOptions =
 
 const sequelize = new Sequelize(DATABASE_URL, sequelizeOptions);
 
-const Users = users(sequelize, DataTypes);
-const Jobs = jobs(sequelize, DataTypes);
-const Profile = profile(sequelize, DataTypes);
 
-const jobsModel = new dataCollection(Jobs);
-const profileModel = new dataCollection(Profile);
+
+const job = jobsModel(sequelize, DataTypes);
+const profile = profileModel(sequelize, DataTypes);
+// const jobsModel = new dataCollection(Jobs);
+// const profileModel = new dataCollection(Profile);
 
 module.exports = {
   db: sequelize,
-  users: Users,
-  jobsModel: jobsModel,
-  profileModel: profileModel,
+  users: userModel(sequelize, DataTypes),
+  job: new Data(job),
+  profile: new Data(profile),
   sequelize: sequelize,
   DataTypes: DataTypes,
 };
+
+
+
+
+
+
+
+

@@ -1,18 +1,31 @@
 "use strict";
 
-const Users = (sequelize, DataTypes) =>
-  sequelize.define("users", {
-    username: { type: DataTypes.STRING, allowNull: false, unique: true },
-    password: { type: DataTypes.STRING, allowNull: false },
-    Email: { type: DataTypes.STRING, allowNull: false, unique: true },
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+
+const SECRET = process.env.SECRET || "secretstring";
+
+const userModel = (sequelize, DataTypes) => {
+  const model = sequelize.define("users", {
+    username: { type: DataTypes.STRING, required: true, unique: true },
+    password: { type: DataTypes.STRING, required: true },
+    Email: { type: DataTypes.STRING, required: true },
     role: {
       type: DataTypes.ENUM("employee", "company", "admin"),
+      required: true,
       defaultValue: "employee",
     },
     token: {
       type: DataTypes.VIRTUAL,
+      get() {
+        return jwt.sign({ username: this.username }, SECRET);
+      },
+      set(tokenObj) {
+        let token = jwt.sign(tokenObj, SECRET);
+        return token;
+      },
     },
-    actions: {
+    capabilities: {
       type: DataTypes.VIRTUAL,
       get() {
         const acl = {
@@ -24,36 +37,38 @@ const Users = (sequelize, DataTypes) =>
       },
     },
   });
-Users.authenticateBasic = async function (username, password) {
-  // get the user form the database
-  const user = await Users.findOne({ where: { username } }); // select * from Users where username='tamim';
-  // compare the users' password from the DB with the on that was submitted in the form
-  const valid = await bcrypt.compare(password, user.password);
-  // if the user is validated, we will create a new token for that user using the jsonwebtokenlibaray
 
-  if (valid) {
-    let newToken = jwt.sign({ username: user.username }, API_SECRET);
-    user.token = newToken;
-    return user;
-  } else {
-    throw new Error("Invalid User");
-  }
-};
-
-Users.authenticateBearer = async function (token) {
-  // check with the jwt if the token is proper
-  const parsedToken = jwt.verify(token, API_SECRET); // the parsed token payload, we are parsing the data using the Secret Key
-  // then find a user that has the data from the payload
-  const user = await this.findOne({
-    where: { username: parsedToken.username },
+  model.beforeCreate(async (user) => {
+    let hashedPass = await bcrypt.hash(user.password, 10);
+    user.password = hashedPass;
   });
-  // if there is, then get the user model
-  if (user) {
-    return user;
-  } else {
-    // if not, throw error
-    throw new Error("Invalid Token");
-  }
+
+  model.authenticateBasic = async function (username, password) {
+    const user = await this.findOne({ where: { username } });
+    const valid = await bcrypt.compare(password, user.password);
+    if (valid) {
+      return user;
+    }
+    throw new Error("Invalid User");
+  };
+
+  model.authenticateToken = async function (token) {
+    try {
+      const parsedToken = jwt.verify(token, SECRET);
+      const user = await this.findOne({
+        where: { username: parsedToken.username },
+      });
+      console.log(user);
+      if (user) {
+        return user;
+      }
+      throw new Error("User Not Found");
+    } catch (e) {
+      throw new Error(e.message);
+    }
+  };
+
+  return model;
 };
 
-module.exports = Users;
+module.exports = userModel;
