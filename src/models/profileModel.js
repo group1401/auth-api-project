@@ -1,6 +1,6 @@
 "use strict";
 
-const Profile = (sequelize, DataTypes) => {
+const profile = (sequelize, DataTypes) => 
   sequelize.define("profile", {
     FirstName: { type: DataTypes.STRING, allowNull: false },
     LastName: { type: DataTypes.STRING, allowNull: false },
@@ -9,6 +9,5 @@ const Profile = (sequelize, DataTypes) => {
     phoneNumber: { type: DataTypes.INTEGER },
     Major: { type: DataTypes.STRING },
   });
-};
 
-module.exports = Profile;
+module.exports = profile;
