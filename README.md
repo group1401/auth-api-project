@@ -96,3 +96,6 @@
 ### UML:
 
 ![uml](./img/auth-api.jpg)
+
+### Deployed link on Herouku:
+- https://job-post-401.herokuapp.com/ 
